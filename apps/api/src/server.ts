@@ -11,6 +11,7 @@ app.get("/api/health", (_req, res) => {
     res.json({
         status: "ok",
         service: "gate-pulse-api",
+        environment: env.nodeEnv,
     });
 });
 
