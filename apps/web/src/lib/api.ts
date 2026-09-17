@@ -13,3 +13,37 @@ export async function getHealth() {
 
     return response.json();
 }
+
+export async function createVisitor(
+    visitorName: string,
+    flatId: string,
+) {
+    const response = await fetch(`${API_URL}/api/visitors`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            visitorName,
+            flatId,
+        }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Failed to create visitor request");
+    }
+
+    return data;
+}
+
+export async function getSocieties() {
+    const response = await fetch(`${API_URL}/api/societies`);
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch societies");
+    }
+
+    return response.json();
+}
