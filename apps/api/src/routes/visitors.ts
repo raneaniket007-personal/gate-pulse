@@ -1,11 +1,38 @@
 import { Router } from "express";
+import multer from "multer";
+import crypto from "node:crypto";
 import { prisma } from "../lib/prisma.js";
+import { uploadToR2 } from "../lib/r2.js";
 
 const router = Router();
 
-router.post("/", async (req, res) => {
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024,
+    },
+});
+
+router.post("/", upload.single("selfie"), async (req, res) => {
     try {
         const { visitorName, flatId } = req.body;
+
+        if (!req.file) {
+            return res.status(400).json({
+                error: "Selfie is required",
+            });
+        }
+
+        const photoKey = `visitors/${new Date()
+            .toISOString()
+            .slice(0, 10)
+            .replace(/-/g, "/")}/${crypto.randomUUID()}.jpg`;
+
+        await uploadToR2(
+            photoKey,
+            req.file.buffer,
+            req.file.mimetype,
+        );
 
         if (!visitorName || !flatId) {
             return res.status(400).json({
@@ -34,6 +61,7 @@ router.post("/", async (req, res) => {
                 visitorName: visitorName.trim(),
                 status: "PENDING",
                 expiresAt,
+                photoKey,
             },
         });
 

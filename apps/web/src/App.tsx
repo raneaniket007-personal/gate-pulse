@@ -17,6 +17,7 @@ function App() {
   const [selectedFlatId, setSelectedFlatId] = useState("");
   const [visitorName, setVisitorName] = useState("");
   const [selfieUrl, setSelfieUrl] = useState<string | null>(null);
+  const [selfieBlob, setSelfieBlob] = useState<Blob | null>(null);
   const [flats, setFlats] = useState<Flat[]>([]);
   const [loadingFlats, setLoadingFlats] = useState(true);
   const [flatError, setFlatError] = useState<string | null>(null);
@@ -183,6 +184,7 @@ function App() {
         onCapture={(blob) => {
           const url = URL.createObjectURL(blob);
 
+          setSelfieBlob(blob);
           setSelfieUrl(url);
           setStep("review");
         }}
@@ -205,9 +207,15 @@ function App() {
             setIsSubmitting(true);
             setSubmitError(null);
 
+            if (!selfieBlob) {
+              setSubmitError("Selfie is missing. Please take a selfie again.");
+              return;
+            }
+
             const result = await createVisitor(
               visitorName,
               selectedFlatId,
+              selfieBlob,
             );
 
             console.log("Visitor request created:", result);

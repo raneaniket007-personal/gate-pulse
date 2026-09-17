@@ -17,16 +17,17 @@ export async function getHealth() {
 export async function createVisitor(
     visitorName: string,
     flatId: string,
+    selfie: Blob,
 ) {
+    const formData = new FormData();
+
+    formData.append("visitorName", visitorName);
+    formData.append("flatId", flatId);
+    formData.append("selfie", selfie, "visitor-selfie.jpg");
+
     const response = await fetch(`${API_URL}/api/visitors`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            visitorName,
-            flatId,
-        }),
+        body: formData,
     });
 
     const data = await response.json();
