@@ -3,6 +3,7 @@ import multer from "multer";
 import crypto from "node:crypto";
 import { prisma } from "../lib/prisma.js";
 import { uploadToR2 } from "../lib/r2.js";
+import { sendVisitorRequestTemplate } from "../lib/whatsapp.js";
 
 const router = Router();
 
@@ -64,6 +65,24 @@ router.post("/", upload.single("selfie"), async (req, res) => {
                 photoKey,
             },
         });
+
+        try {
+            await sendVisitorRequestTemplate({
+                to: flat.phone,
+                visitorName,
+                flatNumber: flat.unitNumber,
+                visitorLogId: visitor.id,
+            });
+
+            console.log(
+                `WhatsApp visitor request sent for VisitorLog ${visitor.id}`,
+            );
+        } catch (error) {
+            console.error(
+                `Failed to send WhatsApp visitor request for VisitorLog ${visitor.id}:`,
+                error,
+            );
+        }
 
         return res.status(201).json({
             id: visitor.id,

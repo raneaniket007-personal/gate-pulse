@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react";
 import SelfieCapture from "./components/SelfieCapture";
 import VisitorReview from "./components/VisitorReview";
+import WaitingForApproval from "./components/WaitingForApproval";
 import { createVisitor, getSocieties } from "./lib/api";
+import { connectToVisitorSocket } from "./lib/socket";
 
-type Step = "welcome" | "flat" | "details" | "selfie" | "review";
+type Step =
+  | "welcome"
+  | "flat"
+  | "details"
+  | "selfie"
+  | "review"
+  | "waiting";
 
 type Flat = {
   id: string;
@@ -23,6 +31,8 @@ function App() {
   const [flatError, setFlatError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [visitorLogId, setVisitorLogId] = useState<string | null>(null);
+
   useEffect(() => {
     async function loadFlats() {
       try {
@@ -45,6 +55,18 @@ function App() {
 
     loadFlats();
   }, []);
+
+  useEffect(() => {
+    if (step !== "waiting" || !visitorLogId) {
+      return;
+    }
+
+    const socket = connectToVisitorSocket(visitorLogId);
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [step, visitorLogId]);
 
   if (step === "details") {
     return (
@@ -217,7 +239,8 @@ function App() {
               selectedFlatId,
               selfieBlob,
             );
-
+            setVisitorLogId(result.id);
+            setStep("waiting");
             console.log("Visitor request created:", result);
           } catch (error) {
             console.error("Failed to submit visitor request:", error);
@@ -233,6 +256,15 @@ function App() {
         }}
       />
     )
+  }
+
+  if (step === "waiting") {
+    return (
+      <WaitingForApproval
+        flatNumber={selectedFlat}
+        visitorName={visitorName}
+      />
+    );
   }
 
   return (
