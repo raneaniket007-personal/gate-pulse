@@ -5,12 +5,15 @@ import { prisma } from "./lib/prisma.js";
 import visitorsRouter from "./routes/visitors.js";
 import { createServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
+import webhooksRouter from "./routes/webhooks.js";
+import { initializeSocket } from "./lib/socket.js";
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use("/api/visitors", visitorsRouter);
+app.use("/api/webhooks", webhooksRouter);
 
 app.get("/api/health", async (_req, res) => {
     try {
@@ -62,6 +65,8 @@ const io = new SocketIOServer(httpServer, {
         origin: "http://localhost:5173",
     },
 });
+
+initializeSocket(io);
 
 io.on("connection", (socket) => {
     console.log(`Socket connected: ${socket.id}`);

@@ -20,7 +20,12 @@ export async function sendVisitorRequestTemplate({
     if (!env.whatsappAccessToken || !env.whatsappPhoneNumberId) {
         throw new Error("WhatsApp environment variables are not configured");
     }
-
+    console.log("Sending WhatsApp template to:", to);
+    console.log("Template parameters:", {
+        visitorName,
+        flatNumber,
+        visitorLogId,
+    });
     const response = await fetch(whatsappUrl, {
         method: "POST",
         headers: {
@@ -35,7 +40,7 @@ export async function sendVisitorRequestTemplate({
             template: {
                 name: "gatepulse_visitor_request",
                 language: {
-                    code: "en_US",
+                    code: "en",
                 },
                 components: [
                     {

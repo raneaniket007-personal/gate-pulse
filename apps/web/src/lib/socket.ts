@@ -1,12 +1,17 @@
 import { io } from "socket.io-client";
 
-const SOCKET_URL = import.meta.env.VITE_API_URL;
+const SOCKET_URL =
+    import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-if (!SOCKET_URL) {
-    throw new Error("VITE_API_URL is not configured");
-}
+export type VisitorStatus =
+    | "APPROVED"
+    | "DENIED"
+    | "EXPIRED";
 
-export function connectToVisitorSocket(visitorLogId: string) {
+export function connectToVisitorSocket(
+    visitorLogId: string,
+    onStatusUpdate: (status: VisitorStatus) => void,
+) {
     const socket = io(SOCKET_URL, {
         transports: ["websocket"],
     });
@@ -18,6 +23,22 @@ export function connectToVisitorSocket(visitorLogId: string) {
             visitorLogId,
         });
     });
+
+    socket.on(
+        "visitor-status-updated",
+        (data: {
+            visitorLogId: string;
+            status: VisitorStatus;
+        }) => {
+            console.log("Visitor status update received:", data);
+
+            if (data.visitorLogId !== visitorLogId) {
+                return;
+            }
+
+            onStatusUpdate(data.status);
+        },
+    );
 
     socket.on("connect_error", (error) => {
         console.error("Socket connection failed:", error);

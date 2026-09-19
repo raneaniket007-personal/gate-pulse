@@ -4,6 +4,8 @@ import VisitorReview from "./components/VisitorReview";
 import WaitingForApproval from "./components/WaitingForApproval";
 import { createVisitor, getSocieties } from "./lib/api";
 import { connectToVisitorSocket } from "./lib/socket";
+import VisitorApproved from "./components/VisitorApproved";
+import VisitorDenied from "./components/VisitorDenied";
 
 type Step =
   | "welcome"
@@ -11,7 +13,9 @@ type Step =
   | "details"
   | "selfie"
   | "review"
-  | "waiting";
+  | "waiting"
+  | "approved"
+  | "denied";
 
 type Flat = {
   id: string;
@@ -61,7 +65,20 @@ function App() {
       return;
     }
 
-    const socket = connectToVisitorSocket(visitorLogId);
+    const socket = connectToVisitorSocket(
+      visitorLogId,
+      (status) => {
+        console.log("Visitor status changed:", status);
+
+        if (status === "APPROVED") {
+          setStep("approved");
+        }
+
+        if (status === "DENIED") {
+          setStep("denied");
+        }
+      },
+    );
 
     return () => {
       socket.disconnect();
@@ -261,6 +278,24 @@ function App() {
   if (step === "waiting") {
     return (
       <WaitingForApproval
+        flatNumber={selectedFlat}
+        visitorName={visitorName}
+      />
+    );
+  }
+
+  if (step === "approved") {
+    return (
+      <VisitorApproved
+        flatNumber={selectedFlat}
+        visitorName={visitorName}
+      />
+    );
+  }
+
+  if (step === "denied") {
+    return (
+      <VisitorDenied
         flatNumber={selectedFlat}
         visitorName={visitorName}
       />
