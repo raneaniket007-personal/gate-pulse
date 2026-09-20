@@ -7,6 +7,7 @@ export type VisitorStatusResult =
         success: true;
         status: "APPROVED" | "DENIED";
         visitorLogId: string;
+        passExpiresAt: Date | null;
     }
     | {
         success: false;
@@ -28,6 +29,7 @@ export async function updateVisitorStatus(
             id: true,
             status: true,
             expiresAt: true,
+            passExpiresAt: true,
         },
     });
 
@@ -38,6 +40,9 @@ export async function updateVisitorStatus(
         };
     }
 
+    /*
+     * A visitor request can only be processed once.
+     */
     if (visitorLog.status !== "PENDING") {
         return {
             success: false,
@@ -45,13 +50,17 @@ export async function updateVisitorStatus(
         };
     }
 
+    /*
+     * The resident cannot approve/deny an already-expired request.
+     */
     if (
         visitorLog.expiresAt &&
         visitorLog.expiresAt <= new Date()
     ) {
-        await prisma.visitorLog.update({
+        await prisma.visitorLog.updateMany({
             where: {
                 id: visitorLog.id,
+                status: "PENDING",
             },
             data: {
                 status: "EXPIRED",
@@ -64,19 +73,46 @@ export async function updateVisitorStatus(
         };
     }
 
+    const now = new Date();
+
     const newStatus =
         action === "APPROVE" ? "APPROVED" : "DENIED";
 
+    /*
+     * The visitor pass is valid for 10 minutes from approval.
+     */
+    const passExpiresAt =
+        action === "APPROVE"
+            ? new Date(now.getTime() + 10 * 60 * 1000)
+            : null;
+
+    /*
+     * Atomic state transition.
+     *
+     * This guarantees that only one webhook can change
+     * PENDING → APPROVED/DENIED.
+     */
     const result = await prisma.visitorLog.updateMany({
         where: {
             id: visitorLog.id,
             status: "PENDING",
         },
-        data: {
-            status: newStatus,
-        },
+        data:
+            action === "APPROVE"
+                ? {
+                    status: "APPROVED",
+                    approvedAt: now,
+                    passExpiresAt,
+                }
+                : {
+                    status: "DENIED",
+                },
     });
 
+    /*
+     * Another webhook may have processed this visitor
+     * between our initial read and the update.
+     */
     if (result.count !== 1) {
         return {
             success: false,
@@ -88,5 +124,6 @@ export async function updateVisitorStatus(
         success: true,
         status: newStatus,
         visitorLogId: visitorLog.id,
+        passExpiresAt,
     };
 }

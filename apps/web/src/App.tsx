@@ -6,6 +6,7 @@ import { createVisitor, getSocieties } from "./lib/api";
 import { connectToVisitorSocket } from "./lib/socket";
 import VisitorApproved from "./components/VisitorApproved";
 import VisitorDenied from "./components/VisitorDenied";
+import VisitorExpired from "./components/VisitorExpired";
 
 type Step =
   | "welcome"
@@ -15,7 +16,8 @@ type Step =
   | "review"
   | "waiting"
   | "approved"
-  | "denied";
+  | "denied"
+  | "expired";
 
 type Flat = {
   id: string;
@@ -36,6 +38,8 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [visitorLogId, setVisitorLogId] = useState<string | null>(null);
+  const [passExpiresAt, setPassExpiresAt] =
+    useState<string | null>(null);
 
   useEffect(() => {
     async function loadFlats() {
@@ -61,24 +65,39 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (step !== "waiting" || !visitorLogId) {
+    if (
+      step !== "waiting" ||
+      !visitorLogId
+    ) {
       return;
     }
 
-    const socket = connectToVisitorSocket(
-      visitorLogId,
-      (status) => {
-        console.log("Visitor status changed:", status);
+    const socket =
+      connectToVisitorSocket(
+        visitorLogId,
+        (update) => {
+          console.log(
+            "Visitor status changed:",
+            update,
+          );
 
-        if (status === "APPROVED") {
-          setStep("approved");
-        }
+          if (update.status === "APPROVED") {
+            setPassExpiresAt(
+              update.passExpiresAt,
+            );
 
-        if (status === "DENIED") {
-          setStep("denied");
-        }
-      },
-    );
+            setStep("approved");
+          }
+
+          if (update.status === "DENIED") {
+            setStep("denied");
+          }
+
+          if (update.status === "EXPIRED") {
+            setStep("expired");
+          }
+        },
+      );
 
     return () => {
       socket.disconnect();
@@ -284,9 +303,25 @@ function App() {
     );
   }
 
-  if (step === "approved") {
+  if (
+    step === "approved" &&
+    passExpiresAt
+  ) {
     return (
       <VisitorApproved
+        flatNumber={selectedFlat}
+        visitorName={visitorName}
+        passExpiresAt={passExpiresAt}
+        onExpired={() => {
+          setStep("expired");
+        }}
+      />
+    );
+  }
+
+  if (step === "expired") {
+    return (
+      <VisitorExpired
         flatNumber={selectedFlat}
         visitorName={visitorName}
       />

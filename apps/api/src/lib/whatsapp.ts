@@ -95,3 +95,65 @@ export async function sendVisitorRequestTemplate({
 
     return data;
 }
+
+export async function sendWhatsAppImage({
+    to,
+    imageUrl,
+    caption,
+}: {
+    to: string;
+    imageUrl: string;
+    caption?: string;
+}) {
+    if (
+        !env.whatsappAccessToken ||
+        !env.whatsappPhoneNumberId
+    ) {
+        throw new Error(
+            "WhatsApp environment variables are not configured",
+        );
+    }
+
+    const response = await fetch(whatsappUrl, {
+        method: "POST",
+
+        headers: {
+            Authorization: `Bearer ${env.whatsappAccessToken}`,
+            "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+            messaging_product: "whatsapp",
+            recipient_type: "individual",
+
+            to,
+
+            type: "image",
+
+            image: {
+                link: imageUrl,
+                ...(caption
+                    ? {
+                        caption,
+                    }
+                    : {}),
+            },
+        }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        console.error(
+            "WhatsApp image API error:",
+            data,
+        );
+
+        throw new Error(
+            data?.error?.message ||
+            "Failed to send WhatsApp image",
+        );
+    }
+
+    return data;
+}

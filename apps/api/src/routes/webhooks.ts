@@ -1,13 +1,21 @@
 import { Router } from "express";
 import { env } from "../config/env.js";
 import {
-    parseVisitorAction,
     parseWhatsAppWebhook,
+    parseVisitorAction,
 } from "../lib/whatsappWebhook.js";
-import type { WhatsAppWebhookPayload } from "../types/whatsapp.js";
-import { authorizeVisitorAction } from "../lib/visitorAuthorization.js";
-import { updateVisitorStatus } from "../lib/visitorStatus.js";
-import { emitVisitorStatus } from "../lib/socket.js";
+import {
+    authorizeVisitorAction,
+} from "../lib/visitorAuthorization.js";
+import {
+    updateVisitorStatus,
+} from "../lib/visitorStatus.js";
+import {
+    emitVisitorStatus,
+} from "../lib/socket.js";
+import type {
+    WhatsAppWebhookPayload,
+} from "../types/whatsapp.js";
 
 const router = Router();
 
@@ -55,48 +63,81 @@ router.post("/whatsapp", async (req, res) => {
             continue;
         }
 
-        console.log("Parsed visitor action:", visitorAction);
-
-        const authorization = await authorizeVisitorAction(
-            visitorAction.visitorLogId,
-            message.from,
+        console.log(
+            "Parsed visitor action:",
+            visitorAction,
         );
+
+        const authorization =
+            await authorizeVisitorAction(
+                visitorAction.visitorLogId,
+                message.from,
+            );
 
         if (!authorization.authorized) {
-            console.warn("Unauthorized visitor action:", {
-                visitorLogId: visitorAction.visitorLogId,
-                whatsappSender: message.from,
-                reason: authorization.reason,
-            });
+            console.warn(
+                "Unauthorized visitor action:",
+                {
+                    visitorLogId:
+                        visitorAction.visitorLogId,
+                    whatsappSender: message.from,
+                    reason: authorization.reason,
+                },
+            );
 
             continue;
         }
 
-        console.log("Visitor action authorized:", {
-            visitorLogId: visitorAction.visitorLogId,
-            action: visitorAction.action,
-            flatNumber: authorization.flat.unitNumber,
-            residentName: authorization.flat.residentName,
-        });
-
-        const statusResult = await updateVisitorStatus(
-            visitorAction.visitorLogId,
-            visitorAction.action,
+        console.log(
+            "Visitor action authorized:",
+            {
+                visitorLogId:
+                    visitorAction.visitorLogId,
+                action: visitorAction.action,
+                flatNumber:
+                    authorization.flat.unitNumber,
+                residentName:
+                    authorization.flat.residentName,
+            },
         );
 
+        const statusResult =
+            await updateVisitorStatus(
+                visitorAction.visitorLogId,
+                visitorAction.action,
+            );
+
         if (!statusResult.success) {
-            console.warn("Visitor status update rejected:", {
-                visitorLogId: visitorAction.visitorLogId,
-                action: visitorAction.action,
-                reason: statusResult.reason,
-            });
+            console.warn(
+                "Visitor status update rejected:",
+                {
+                    visitorLogId:
+                        visitorAction.visitorLogId,
+                    action: visitorAction.action,
+                    reason: statusResult.reason,
+                },
+            );
 
             continue;
         }
+
+        console.log(
+            "Visitor status updated:",
+            {
+                visitorLogId:
+                    statusResult.visitorLogId,
+                status: statusResult.status,
+                passExpiresAt:
+                    statusResult.passExpiresAt,
+            },
+        );
 
         emitVisitorStatus(
             statusResult.visitorLogId,
             statusResult.status,
+            statusResult.passExpiresAt
+                ? statusResult.passExpiresAt.toISOString()
+                : null,
         );
     }
 
