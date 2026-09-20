@@ -5,6 +5,9 @@ dotenv.config();
 export const env = {
     port: Number(process.env.PORT) || 3000,
     nodeEnv: process.env.NODE_ENV || "development",
+    webAppUrl:
+        process.env.WEB_APP_URL ||
+        "http://localhost:5173",
 
     r2AccountId: process.env.R2_ACCOUNT_ID || "",
     r2AccessKeyId: process.env.R2_ACCESS_KEY_ID || "",

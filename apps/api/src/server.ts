@@ -10,7 +10,11 @@ import { initializeSocket } from "./lib/socket.js";
 
 const app = express();
 
-app.use(cors());
+app.use(
+    cors({
+        origin: env.webAppUrl,
+    }),
+);
 app.use(express.json());
 app.use("/api/visitors", visitorsRouter);
 app.use("/api/webhooks", webhooksRouter);
@@ -62,7 +66,7 @@ const httpServer = createServer(app);
 
 const io = new SocketIOServer(httpServer, {
     cors: {
-        origin: "http://localhost:5173",
+        origin: env.webAppUrl,
     },
 });
 
