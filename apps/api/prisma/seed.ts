@@ -14,31 +14,34 @@ const prisma = new PrismaClient({
 async function main() {
     console.log("Seeding database...");
 
-    const society = await prisma.society.upsert({
-        where: {
+    const societies = [
+        {
             id: "00000000-0000-0000-0000-000000000001",
-        },
-        update: {},
-        create: {
-            id: "00000000-0000-0000-0000-000000000001",
-            name: "GatePulse Residency",
+            name: "Swastik Pearl",
             address: "Mumbai, Maharashtra",
             gateLatitude: 19.076,
             gateLongitude: 72.8777,
             allowedRadiusMeters: 50,
+        }, {
+            id: "00000000-0000-0000-0000-000000000002",
+            name: "Shraddha Pride",
+            address: "Mumbai, Maharashtra",
+            gateLatitude: 45.076,
+            gateLongitude: 79.8777,
+            allowedRadiusMeters: 50,
         },
-    });
+    ];
 
     const flats = [
         {
             unitNumber: "A-101",
             residentName: "Rahul Sharma",
-            phone: "+919999999101",
+            phone: "+919920419564",
         },
         {
             unitNumber: "A-102",
             residentName: "Priya Mehta",
-            phone: "+919999999102",
+            phone: "+918878641944",
         },
         {
             unitNumber: "A-103",
@@ -57,29 +60,47 @@ async function main() {
         },
     ];
 
-    for (const flat of flats) {
-        await prisma.flat.upsert({
+
+    for (const society of societies) {
+        await prisma.society.upsert({
             where: {
-                societyId_unitNumber: {
-                    societyId: society.id,
-                    unitNumber: flat.unitNumber,
-                },
+                id: society.id,
             },
-            update: {
-                residentName: flat.residentName,
-                phone: flat.phone,
-            },
+            update: {},
             create: {
-                societyId: society.id,
-                unitNumber: flat.unitNumber,
-                residentName: flat.residentName,
-                phone: flat.phone,
+                id: society.id,
+                name: society.name,
+                address: society.address,
+                gateLatitude: society.gateLatitude,
+                gateLongitude: society.gateLongitude,
+                allowedRadiusMeters: society.allowedRadiusMeters,
             },
         });
-    }
 
-    console.log(`Created society: ${society.name}`);
-    console.log(`Created/updated ${flats.length} flats`);
+        for (const flat of flats) {
+            await prisma.flat.upsert({
+                where: {
+                    societyId_unitNumber: {
+                        societyId: society.id,
+                        unitNumber: flat.unitNumber,
+                    },
+                },
+                update: {
+                    residentName: flat.residentName,
+                    phone: flat.phone,
+                },
+                create: {
+                    societyId: society.id,
+                    unitNumber: flat.unitNumber,
+                    residentName: flat.residentName,
+                    phone: flat.phone,
+                },
+            });
+        }
+
+        console.log(`Created society: ${society.name}`);
+        console.log(`Created/updated ${flats.length} flats`);
+    }
 }
 
 

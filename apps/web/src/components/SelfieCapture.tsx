@@ -16,46 +16,37 @@ function SelfieCapture({
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
 
+    const startCamera = async () => {
+        try {
+            setError(null);
+
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: "user",
+                },
+                audio: false,
+            });
+
+            streamRef.current = stream;
+
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+        } catch {
+            setError(
+                "Camera access is required to take a selfie. Please allow camera access and try again.",
+            );
+        }
+    };
+
     useEffect(() => {
         if (capturedImage) {
             return;
         }
 
-        let mounted = true;
-
-        async function startCamera() {
-            try {
-                setError(null);
-
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        facingMode: "user",
-                    },
-                    audio: false,
-                });
-
-                if (!mounted) {
-                    stream.getTracks().forEach((track) => track.stop());
-                    return;
-                }
-
-                streamRef.current = stream;
-
-                if (videoRef.current) {
-                    videoRef.current.srcObject = stream;
-                }
-            } catch {
-                setError(
-                    "Camera access is required to take a selfie. Please allow camera access and try again.",
-                );
-            }
-        }
-
         startCamera();
 
         return () => {
-            mounted = false;
-
             streamRef.current?.getTracks().forEach((track) => track.stop());
             streamRef.current = null;
         };
@@ -202,8 +193,14 @@ function SelfieCapture({
 
                 <div className="overflow-hidden rounded-2xl bg-black shadow-sm">
                     {error ? (
-                        <div className="flex min-h-[360px] items-center justify-center p-6 text-center">
-                            <p className="text-sm text-white">{error}</p>
+                        <div className="flex min-h-[360px] flex-col items-center justify-center p-6 text-center">
+                            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-amber-400 text-xl font-bold">
+                                📷
+                            </div>
+                            <p className="text-sm font-medium text-white">{error}</p>
+                            <p className="mt-2 text-xs text-slate-400">
+                                If you blocked permissions, tap your browser's lock icon 🔒 next to the address bar to allow camera access.
+                            </p>
                         </div>
                     ) : (
                         <video
@@ -219,14 +216,24 @@ function SelfieCapture({
                     )}
                 </div>
 
-                <button
-                    type="button"
-                    onClick={capturePhoto}
-                    disabled={!!error}
-                    className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                    Take Selfie
-                </button>
+                {error ? (
+                    <button
+                        type="button"
+                        onClick={startCamera}
+                        className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                    >
+                        Try Again
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={capturePhoto}
+                        disabled={!!error}
+                        className="mt-5 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        Take Selfie
+                    </button>
+                )}
 
                 <button
                     type="button"

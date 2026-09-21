@@ -44,3 +44,23 @@ export async function getSocieties() {
 
     return response.json();
 }
+
+export async function getSocietyById(societyId: string) {
+    const response = await fetch(`${API_URL}/api/societies/${societyId}`);
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch society");
+    }
+
+    return response.json();
+}
+
+export async function getVisitorStatus(visitorLogId: string) {
+    const response = await fetch(`${API_URL}/api/visitors/${visitorLogId}`);
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch visitor status");
+    }
+
+    return response.json();
+}

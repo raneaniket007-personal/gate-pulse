@@ -56,6 +56,21 @@ function VisitorApproved({
     `${String(minutes).padStart(2, "0")}:` +
     `${String(seconds).padStart(2, "0")}`;
 
+  // Pass is valid for 10 minutes (600 seconds) from approval time
+  const approvalDate = new Date(new Date(passExpiresAt).getTime() - 10 * 60 * 1000);
+
+  const formattedApprovedDate = approvalDate.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  const formattedApprovedTime = approvalDate.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8">
       <div className="mx-auto flex min-h-[80vh] w-full max-w-md items-center">
@@ -80,24 +95,31 @@ function VisitorApproved({
           <div className="p-6">
 
             <div className="rounded-xl bg-slate-50 p-5">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                  Visitor
-                </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Visitor
+                  </p>
 
-                <p className="mt-1 text-lg font-semibold text-slate-900">
-                  {visitorName}
-                </p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900">
+                    {visitorName}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Visiting
+                  </p>
+
+                  <p className="mt-1 text-lg font-semibold text-slate-900">
+                    Flat {flatNumber}
+                  </p>
+                </div>
               </div>
 
-              <div className="mt-5">
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                  Visiting
-                </p>
-
-                <p className="mt-1 text-lg font-semibold text-slate-900">
-                  Flat {flatNumber}
-                </p>
+              <div className="mt-4 border-t border-slate-200/60 pt-3 flex items-center justify-between text-xs text-slate-500">
+                <span>Date: <strong className="font-semibold text-slate-700">{formattedApprovedDate}</strong></span>
+                <span>Approved At: <strong className="font-semibold text-slate-900 tabular-nums">{formattedApprovedTime}</strong></span>
               </div>
             </div>
 

@@ -119,4 +119,36 @@ router.post("/", upload.single("selfie"), async (req, res) => {
     }
 });
 
+router.get("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const visitor = await prisma.visitorLog.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                status: true,
+                expiresAt: true,
+            },
+        });
+
+        if (!visitor) {
+            return res.status(404).json({
+                error: "Visitor log not found",
+            });
+        }
+
+        return res.json({
+            id: visitor.id,
+            status: visitor.status,
+            passExpiresAt: visitor.expiresAt ? visitor.expiresAt.toISOString() : null,
+        });
+    } catch (error) {
+        console.error("Failed to fetch visitor status:", error);
+        return res.status(500).json({
+            error: "Failed to fetch visitor status",
+        });
+    }
+});
+
 export default router;

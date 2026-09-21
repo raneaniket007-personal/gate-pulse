@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import SelfieCapture from "./components/SelfieCapture";
 import VisitorReview from "./components/VisitorReview";
 import WaitingForApproval from "./components/WaitingForApproval";
-import { createVisitor, getSocieties } from "./lib/api";
+import { createVisitor, getSocietyById, getVisitorStatus } from "./lib/api";
 import { connectToVisitorSocket } from "./lib/socket";
 import VisitorApproved from "./components/VisitorApproved";
 import VisitorDenied from "./components/VisitorDenied";
@@ -25,6 +25,13 @@ type Flat = {
   residentName: string;
 };
 
+type Society = {
+  id: string;
+  name: string;
+  address?: string;
+  flats: Flat[];
+};
+
 function App() {
   const [step, setStep] = useState<Step>("welcome");
   const [selectedFlat, setSelectedFlat] = useState("");
@@ -32,9 +39,10 @@ function App() {
   const [visitorName, setVisitorName] = useState("");
   const [selfieUrl, setSelfieUrl] = useState<string | null>(null);
   const [selfieBlob, setSelfieBlob] = useState<Blob | null>(null);
+  const [societyName, setSocietyName] = useState("");
   const [flats, setFlats] = useState<Flat[]>([]);
-  const [loadingFlats, setLoadingFlats] = useState(true);
-  const [flatError, setFlatError] = useState<string | null>(null);
+  const [loadingSociety, setLoadingSociety] = useState(true);
+  const [societyError, setSocietyError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [visitorLogId, setVisitorLogId] = useState<string | null>(null);
@@ -42,26 +50,32 @@ function App() {
     useState<string | null>(null);
 
   useEffect(() => {
-    async function loadFlats() {
+    async function loadSocietyData() {
       try {
-        setLoadingFlats(true);
+        setLoadingSociety(true);
+        setSocietyError(null);
 
-        const societies = await getSocieties();
+        const params = new URLSearchParams(window.location.search);
+        const societyId = params.get("society");
 
-        if (!societies.length) {
-          throw new Error("No society found");
+        if (!societyId) {
+          setSocietyError("Invalid URL: Missing society parameter. Please scan a valid Gate QR code.");
+          return;
         }
-        //TODO: Update this to get society based on QR code
-        setFlats(societies[0].flats);
+
+        const targetSociety: Society = await getSocietyById(societyId);
+
+        setSocietyName(targetSociety.name);
+        setFlats(targetSociety.flats || []);
       } catch (error) {
-        console.error("Failed to load flats:", error);
-        setFlatError("Unable to load flats. Please try again.");
+        console.error("Failed to load society:", error);
+        setSocietyError("Unable to load society details. Please scan a valid Gate QR code.");
       } finally {
-        setLoadingFlats(false);
+        setLoadingSociety(false);
       }
     }
 
-    loadFlats();
+    loadSocietyData();
   }, []);
 
   useEffect(() => {
@@ -72,35 +86,35 @@ function App() {
       return;
     }
 
-    const socket =
-      connectToVisitorSocket(
-        visitorLogId,
-        (update) => {
-          console.log(
-            "Visitor status changed:",
-            update,
-          );
+    const handleStatusUpdate = (update: { status: string; passExpiresAt?: string | null }) => {
+      console.log("Visitor status updated:", update);
 
-          if (update.status === "APPROVED") {
-            setPassExpiresAt(
-              update.passExpiresAt,
-            );
+      if (update.status === "APPROVED") {
+        setPassExpiresAt(update.passExpiresAt || null);
+        setStep("approved");
+      } else if (update.status === "DENIED") {
+        setStep("denied");
+      } else if (update.status === "EXPIRED") {
+        setStep("expired");
+      }
+    };
 
-            setStep("approved");
-          }
+    const socket = connectToVisitorSocket(visitorLogId, handleStatusUpdate);
 
-          if (update.status === "DENIED") {
-            setStep("denied");
-          }
-
-          if (update.status === "EXPIRED") {
-            setStep("expired");
-          }
-        },
-      );
+    const pollInterval = setInterval(async () => {
+      try {
+        const data = await getVisitorStatus(visitorLogId);
+        if (data.status && data.status !== "PENDING") {
+          handleStatusUpdate(data);
+        }
+      } catch (err) {
+        console.warn("Polling visitor status error:", err);
+      }
+    }, 3000);
 
     return () => {
       socket.disconnect();
+      clearInterval(pollInterval);
     };
   }, [step, visitorLogId]);
 
@@ -110,7 +124,7 @@ function App() {
         <div className="mx-auto w-full max-w-md">
           <div className="mb-8">
             <p className="text-sm font-medium text-slate-500">
-              GatePulse Residency
+              {societyName}
             </p>
 
             <h1 className="mt-1 text-2xl font-bold text-slate-900">
@@ -177,7 +191,7 @@ function App() {
         <div className="mx-auto w-full max-w-md">
           <div className="mb-6">
             <p className="text-sm font-medium text-slate-500">
-              GatePulse Residency
+              {societyName}
             </p>
 
             <h1 className="mt-1 text-2xl font-bold text-slate-900">
@@ -190,20 +204,20 @@ function App() {
           </div>
 
           <div className="space-y-3">
-            {loadingFlats && (
+            {loadingSociety && (
               <div className="rounded-xl bg-white p-4 text-center text-sm text-slate-500">
                 Loading flats...
               </div>
             )}
 
-            {flatError && (
+            {societyError && (
               <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
-                {flatError}
+                {societyError}
               </div>
             )}
 
-            {!loadingFlats &&
-              !flatError &&
+            {!loadingSociety &&
+              !societyError &&
               flats.map((flat) => (
                 <button
                   key={flat.id}
@@ -355,24 +369,31 @@ function App() {
             </p>
           </div>
 
-          <div className="mb-6 rounded-xl bg-slate-50 p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Society
-            </p>
+          {societyError ? (
+            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+              {societyError}
+            </div>
+          ) : (
+            <div className="mb-6 rounded-xl bg-slate-50 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                Society
+              </p>
 
-            <p className="mt-1 text-lg font-semibold text-slate-900">
-              GatePulse Residency
-            </p>
+              <p className="mt-1 text-lg font-semibold text-slate-900">
+                {loadingSociety ? "Loading..." : societyName}
+              </p>
 
-            <p className="mt-1 text-sm text-slate-500">
-              Please provide your details to request entry.
-            </p>
-          </div>
+              <p className="mt-1 text-sm text-slate-500">
+                Please provide your details to request entry.
+              </p>
+            </div>
+          )}
 
           <button
             type="button"
+            disabled={loadingSociety || Boolean(societyError)}
             onClick={() => setStep("flat")}
-            className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+            className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Request Entry
           </button>

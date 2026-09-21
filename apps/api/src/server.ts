@@ -62,6 +62,64 @@ app.get("/api/societies", async (_req, res) => {
     }
 });
 
+app.get("/api/societies/:societyId", async (req, res) => {
+    try {
+        const { societyId } = req.params;
+
+        const society = await prisma.society.findUnique({
+            where: {
+                id: societyId,
+            },
+            include: {
+                flats: true,
+            },
+        });
+
+        if (!society) {
+            return res.status(404).json({
+                error: "Society not found",
+            });
+        }
+
+        res.json(society);
+    } catch (error) {
+        console.error("Failed to fetch society:", error);
+
+        res.status(500).json({
+            error: "Failed to fetch society",
+        });
+    }
+});
+
+app.get("/api/societies/:societyId", async (req, res) => {
+    try {
+        const { societyId } = req.params;
+
+        const society = await prisma.society.findUnique({
+            where: {
+                id: societyId,
+            },
+            include: {
+                flats: true,
+            },
+        });
+
+        if (!society) {
+            return res.status(404).json({
+                error: "Society not found",
+            });
+        }
+
+        res.json(society);
+    } catch (error) {
+        console.error("Failed to fetch society:", error);
+
+        res.status(500).json({
+            error: "Failed to fetch society",
+        });
+    }
+});
+
 const httpServer = createServer(app);
 
 const io = new SocketIOServer(httpServer, {
