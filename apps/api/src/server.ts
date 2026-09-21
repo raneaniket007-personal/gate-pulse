@@ -97,8 +97,8 @@ io.on("connection", (socket) => {
     });
 });
 
-httpServer.listen(env.port, () => {
+httpServer.listen(env.port, "0.0.0.0", () => {
     console.log(
-        `GatePulse API running on http://localhost:${env.port}`,
+        `GatePulse API running on port ${env.port}`,
     );
 });
