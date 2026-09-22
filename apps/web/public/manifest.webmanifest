@@ -1,0 +1,17 @@
+{
+  "name": "GatePulse",
+  "short_name": "GatePulse",
+  "start_url": "/resident",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f172a",
+  "description": "GatePulse resident visitor approval app",
+  "icons": [
+    {
+      "src": "/gatepulse-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
