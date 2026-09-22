@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { prisma } from "../lib/prisma.js";
 import { getResidentFromToken, loginResident } from "../lib/residentAuth.js";
 import { createSignedR2Url } from "../lib/r2.js";
@@ -13,7 +13,7 @@ function bearerToken(req: { headers: { authorization?: string } }) {
     return value.startsWith("Bearer ") ? value.slice(7) : "";
 }
 
-async function authenticate(req: Parameters<typeof router.get>[1]) {
+async function authenticate(req: Request) {
     return getResidentFromToken(bearerToken(req));
 }
 
