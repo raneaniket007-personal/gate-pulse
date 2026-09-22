@@ -18,64 +18,85 @@ model Society {
   id      String @id @default(uuid())
   name    String
   address String
-
   gateLatitude        Decimal
   gateLongitude       Decimal
-  allowedRadiusMeters Int     @default(50)
-
+  allowedRadiusMeters Int @default(50)
   flats    Flat[]
   visitors VisitorLog[]
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Flat {
   id String @id @default(uuid())
-
   societyId String
-  society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
-
-  unitNumber   String
+  society Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  unitNumber String
   residentName String
-  phone        String
-
+  phone String
+  resident Resident?
   visitors VisitorLog[]
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   @@unique([societyId, unitNumber])
   @@index([societyId])
 }
 
-model VisitorLog {
+model Resident {
   id String @id @default(uuid())
-
-  societyId String
-  society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
-
-  flatId String
-  flat   Flat   @relation(fields: [flatId], references: [id], onDelete: Cascade)
-
-  visitorName String
-
-  photoKey String?
-
-  latitude  Decimal?
-  longitude Decimal?
-  accuracy  Decimal?
-
-  status VisitorStatus @default(PENDING)
-
-  expiresAt DateTime?
-
-  approvedAt DateTime?
-  passExpiresAt DateTime?
-
+  flatId String @unique
+  flat Flat @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  name String
+  phone String
+  pinHash String
+  sessions ResidentSession[]
+  pushSubscriptions PushSubscription[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([phone])
+}
 
+model ResidentSession {
+  id String @id @default(uuid())
+  residentId String
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  tokenHash String @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([residentId])
+  @@index([expiresAt])
+}
+
+model PushSubscription {
+  id String @id @default(uuid())
+  residentId String
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  endpoint String @unique
+  p256dh String
+  auth String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([residentId])
+}
+
+model VisitorLog {
+  id String @id @default(uuid())
+  societyId String
+  society Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  flatId String
+  flat Flat @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  visitorName String
+  photoKey String?
+  latitude Decimal?
+  longitude Decimal?
+  accuracy Decimal?
+  status VisitorStatus @default(PENDING)
+  expiresAt DateTime?
+  approvedAt DateTime?
+  passExpiresAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   @@index([societyId, createdAt])
   @@index([flatId, createdAt])
   @@index([status])
