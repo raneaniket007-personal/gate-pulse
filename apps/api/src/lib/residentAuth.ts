@@ -14,7 +14,7 @@ export function hashResidentPin(pin: string) {
 export async function loginResident(phone: string, pin: string) {
     const normalizedPhone = phone.replace(/\D/g, "");
     const resident = await prisma.resident.findFirst({
-        where: { phone: normalizedPhone },
+        where: { phone: { in: [normalizedPhone, "+" + normalizedPhone] } },
         include: { flat: { include: { society: true } } },
     });
 
