@@ -208,9 +208,10 @@ function Detail({ id, onBack }: { id: string; onBack: () => void }) {
 }
 
 export default function ResidentApp() {
-    const [view, setView] = useState<View>(getResidentToken() ? "dashboard" : "login");
+    const initialVisitorId = window.location.pathname.match(/^\/resident\/visitors\/([^/]+)/)?.[1] || null;
+    const [view, setView] = useState<View>(getResidentToken() ? (initialVisitorId ? "detail" : "dashboard") : "login");
     const [resident, setResident] = useState<Resident | null>(null);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [selectedId, setSelectedId] = useState<string | null>(initialVisitorId);
 
     useEffect(() => {
         if (!getResidentToken()) return;
