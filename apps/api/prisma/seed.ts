@@ -1,4 +1,5 @@
 import "dotenv/config";
+import crypto from "node:crypto";
 
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client.js";
@@ -98,6 +99,29 @@ async function main() {
             });
         }
 
+        const flatRecord = await prisma.flat.findUniqueOrThrow({
+            where: {
+                societyId_unitNumber: {
+                    societyId: society.id,
+                    unitNumber: flat.unitNumber,
+                },
+            },
+        });
+
+        await prisma.resident.upsert({
+            where: { flatId: flatRecord.id },
+            update: {
+                name: flat.residentName,
+                phone: flat.phone,
+                pinHash: crypto.createHash("sha256").update("1234").digest("hex"),
+            },
+            create: {
+                flatId: flatRecord.id,
+                name: flat.residentName,
+                phone: flat.phone,
+                pinHash: crypto.createHash("sha256").update("1234").digest("hex"),
+            },
+        });
         console.log(`Created society: ${society.name}`);
         console.log(`Created/updated ${flats.length} flats`);
     }
