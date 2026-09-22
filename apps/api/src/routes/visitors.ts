@@ -8,6 +8,7 @@ import {
     sendWhatsAppImage,
 } from "../lib/whatsapp.js";
 import { createSignedR2Url } from "../lib/r2.js";
+import { sendResidentPush } from "../lib/webPush.js";
 
 const router = Router();
 
@@ -103,6 +104,20 @@ router.post("/", upload.single("selfie"), async (req, res) => {
                 `Failed to send WhatsApp visitor notification for visitor ${visitor.id}:`,
                 error,
             );
+        }
+
+        const resident = await prisma.resident.findUnique({
+            where: { flatId: flat.id },
+            select: { id: true },
+        });
+
+        if (resident) {
+            await sendResidentPush(resident.id, {
+                title: "New visitor request",
+                body: `${visitorName} is requesting entry to Flat ${flat.unitNumber}`,
+                url: `/resident/visitors/${visitor.id}`,
+                visitorLogId: visitor.id,
+            });
         }
 
         return res.status(201).json({
