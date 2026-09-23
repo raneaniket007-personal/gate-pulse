@@ -1,4 +1,4 @@
-import { getPushConfig, savePushSubscription } from "./residentApi";
+import { savePushSubscription } from "./residentApi";
 
 function urlBase64ToUint8Array(base64String: string) {
     const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -8,8 +8,17 @@ function urlBase64ToUint8Array(base64String: string) {
 }
 
 export async function enableResidentPush() {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    if (
+        !("serviceWorker" in navigator) ||
+        !("PushManager" in window) ||
+        !("Notification" in window)
+    ) {
         throw new Error("Push notifications are not supported in this browser.");
+    }
+
+    const publicKey = import.meta.env.VITE_WEB_PUSH_VAPID_PUBLIC_KEY as string | undefined;
+    if (!publicKey) {
+        throw new Error("VITE_WEB_PUSH_VAPID_PUBLIC_KEY is not configured.");
     }
 
     const registration = await navigator.serviceWorker.register("/sw.js");
@@ -18,16 +27,13 @@ export async function enableResidentPush() {
         throw new Error("Notification permission was not granted.");
     }
 
-    const { publicKey } = await getPushConfig();
-    if (!publicKey) {
-        throw new Error("Push notifications are not configured on the server yet.");
-    }
-
     const existing = await registration.pushManager.getSubscription();
-    const subscription = existing || await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
-    });
+    const subscription =
+        existing ||
+        (await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey),
+        }));
 
     await savePushSubscription(subscription.toJSON());
 }
