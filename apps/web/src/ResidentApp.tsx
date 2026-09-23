@@ -16,7 +16,7 @@ import { enableResidentPush } from "./lib/push";
 type View = "login" | "dashboard" | "detail";
 
 function formatTime(value: string) {
-    return new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+    return new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short", hour12: true });
 }
 
 function StatusPill({ status }: { status: ResidentVisitor["status"] }) {
