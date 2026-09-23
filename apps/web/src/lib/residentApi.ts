@@ -65,10 +65,6 @@ export async function getResidentMe() {
     return request("/api/residents/me") as Promise<Resident>;
 }
 
-export async function getPushConfig() {
-    return request("/api/residents/push/config") as Promise<{ publicKey: string }>;
-}
-
 export async function savePushSubscription(subscription: PushSubscriptionJSON) {
     return request("/api/residents/push-subscriptions", {
         method: "POST",
