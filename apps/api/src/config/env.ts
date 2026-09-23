@@ -15,6 +15,5 @@ export const env = {
     whatsappBusinessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID || "",
     whatsappVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN || "",
     webPushVapidSubject: process.env.WEB_PUSH_VAPID_SUBJECT || "",
-    webPushVapidPublicKey: process.env.WEB_PUSH_VAPID_PUBLIC_KEY || "",
     webPushVapidPrivateKey: process.env.WEB_PUSH_VAPID_PRIVATE_KEY || "",
 };
