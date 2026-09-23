@@ -58,7 +58,7 @@ router.get("/me", async (req, res) => {
         flatId: resident.flatId,
         flatNumber: resident.flat.unitNumber,
         societyId: resident.flat.societyId,
-        societyName: resident.flat.society.name,
+        societyName: resident.flat.societyName,
     });
 });
 
@@ -114,7 +114,7 @@ router.get("/visitors", async (req, res) => {
             photoKey: true,
             flat: { select: { unitNumber: true } },
         },
-    });
+    );
 
     const result = await Promise.all(
         visitors.map(async (visitor) => ({
@@ -196,14 +196,14 @@ router.post("/push/test", async (req, res) => {
     const resident = await authenticate(req);
     if (!resident) return res.status(401).json({ error: "Unauthorized" });
 
-    await sendResidentPush(resident.id, {
+    const result = await sendResidentPush(resident.id, {
         title: "GatePulse test notification",
         body: "Push notifications are working on this device.",
         url: "/resident",
         visitorLogId: "test",
     });
 
-    return res.json({ ok: true });
+    return res.json({ ok: result.failed === 0 && result.sent > 0, ...result });
 });
 
 export default router;
