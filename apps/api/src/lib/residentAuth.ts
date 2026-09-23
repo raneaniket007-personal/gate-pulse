@@ -2,9 +2,23 @@ import crypto from "node:crypto";
 import { prisma } from "./prisma.js";
 
 const SESSION_DAYS = 7;
+const INDIA_COUNTRY_CODE = "+91";
 
 function hash(value: string) {
     return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function normalizeIndianPhone(phone: string) {
+    const digits = phone.replace(/\D/g, "");
+    const localNumber = digits.length === 12 && digits.startsWith("91")
+        ? digits.slice(2)
+        : digits;
+
+    if (localNumber.length !== 10) {
+        return null;
+    }
+
+    return INDIA_COUNTRY_CODE + localNumber;
 }
 
 export function hashResidentPin(pin: string) {
@@ -12,9 +26,14 @@ export function hashResidentPin(pin: string) {
 }
 
 export async function loginResident(phone: string, pin: string) {
-    const normalizedPhone = phone.replace(/\D/g, "");
+    const normalizedPhone = normalizeIndianPhone(phone);
+
+    if (!normalizedPhone) {
+        return null;
+    }
+
     const resident = await prisma.resident.findFirst({
-        where: { phone: { in: [normalizedPhone, "+" + normalizedPhone] } },
+        where: { phone: normalizedPhone },
         include: { flat: { include: { society: true } } },
     });
 
