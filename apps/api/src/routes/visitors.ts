@@ -2,12 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import crypto from "node:crypto";
 import { prisma } from "../lib/prisma.js";
-import { uploadToR2 } from "../lib/r2.js";
-import {
-    sendVisitorRequestTemplate,
-    sendWhatsAppImage,
-} from "../lib/whatsapp.js";
-import { createSignedR2Url } from "../lib/r2.js";
+import { uploadToR2, createSignedR2Url } from "../lib/r2.js";
 import { sendResidentPush } from "../lib/webPush.js";
 
 const router = Router();
@@ -71,41 +66,6 @@ router.post("/", upload.single("selfie"), async (req, res) => {
             },
         });
 
-        try {
-            if (!photoKey) {
-                throw new Error(
-                    "Photo key is missing after selfie upload",
-                );
-            }
-
-            const photoUrl = await createSignedR2Url(
-                photoKey,
-                5 * 60,
-            );
-
-            await sendWhatsAppImage({
-                to: flat.phone,
-                imageUrl: photoUrl,
-                caption: `Visitor: ${visitorName}\nFlat: ${flat.unitNumber}`,
-            });
-
-            await sendVisitorRequestTemplate({
-                to: flat.phone,
-                visitorName,
-                flatNumber: flat.unitNumber,
-                visitorLogId: visitor.id,
-            });
-
-            console.log(
-                `WhatsApp visitor notification sent for VisitorLog ${visitor.id}`,
-            );
-        } catch (error) {
-            console.error(
-                `Failed to send WhatsApp visitor notification for visitor ${visitor.id}:`,
-                error,
-            );
-        }
-
         const resident = await prisma.resident.findUnique({
             where: { flatId: flat.id },
             select: { id: true },
@@ -118,6 +78,10 @@ router.post("/", upload.single("selfie"), async (req, res) => {
                 url: `/resident/visitors/${visitor.id}`,
                 visitorLogId: visitor.id,
             });
+        } else {
+            console.warn(
+                `No resident account found for Flat ${flat.unitNumber}; visitor push notification was not sent.`,
+            );
         }
 
         return res.status(201).json({
@@ -156,7 +120,9 @@ router.get("/:id", async (req, res) => {
         return res.json({
             id: visitor.id,
             status: visitor.status,
-            passExpiresAt: visitor.expiresAt ? visitor.expiresAt.toISOString() : null,
+            passExpiresAt: visitor.expiresAt
+                ? visitor.expiresAt.toISOString()
+                : null,
         });
     } catch (error) {
         console.error("Failed to fetch visitor status:", error);
