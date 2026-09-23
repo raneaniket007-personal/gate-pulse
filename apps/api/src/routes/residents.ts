@@ -58,7 +58,7 @@ router.get("/me", async (req, res) => {
         flatId: resident.flatId,
         flatNumber: resident.flat.unitNumber,
         societyId: resident.flat.societyId,
-        societyName: resident.flat.societyName,
+        societyName: resident.flat.society.name,
     });
 });
 
@@ -114,7 +114,7 @@ router.get("/visitors", async (req, res) => {
             photoKey: true,
             flat: { select: { unitNumber: true } },
         },
-    );
+    });
 
     const result = await Promise.all(
         visitors.map(async (visitor) => ({
