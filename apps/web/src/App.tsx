@@ -1,3 +1,4 @@
+import ResidentApp from "./ResidentApp";
 import { useEffect, useState } from "react";
 import SelfieCapture from "./components/SelfieCapture";
 import VisitorReview from "./components/VisitorReview";
@@ -33,6 +34,9 @@ type Society = {
 };
 
 function App() {
+  if (window.location.pathname.startsWith("/resident")) {
+    return <ResidentApp />;
+  }
   const [step, setStep] = useState<Step>("welcome");
   const [selectedFlat, setSelectedFlat] = useState("");
   const [selectedFlatId, setSelectedFlatId] = useState("");
@@ -408,3 +412,4 @@ function App() {
 }
 
 export default App;
+
