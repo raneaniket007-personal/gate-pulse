@@ -4,7 +4,7 @@ import { getResidentFromToken, loginResident } from "../lib/residentAuth.js";
 import { createSignedR2Url } from "../lib/r2.js";
 import { emitVisitorStatus } from "../lib/socket.js";
 import { updateVisitorStatus } from "../lib/visitorStatus.js";
-import { getWebPushPublicKey, sendResidentPush } from "../lib/webPush.js";
+import { sendResidentPush } from "../lib/webPush.js";
 
 const router = Router();
 
@@ -60,10 +60,6 @@ router.get("/me", async (req, res) => {
         societyId: resident.flat.societyId,
         societyName: resident.flat.society.name,
     });
-});
-
-router.get("/push/config", (_req, res) => {
-    return res.json({ publicKey: getWebPushPublicKey() });
 });
 
 router.post("/push-subscriptions", async (req, res) => {
