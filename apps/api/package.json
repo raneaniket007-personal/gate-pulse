@@ -19,7 +19,6 @@
     "@aws-sdk/s3-request-presigner": "^3.1136.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
-    "@types/web-push": "^3.6.4",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -34,6 +33,7 @@
     "@types/multer": "^2.2.0",
     "@types/node": "^24.13.5",
     "@types/pg": "^8.23.1",
+    "@types/web-push": "^3.6.4",
     "prisma": "^7.10.0",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2"

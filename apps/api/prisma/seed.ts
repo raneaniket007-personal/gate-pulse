@@ -79,7 +79,7 @@ async function main() {
         });
 
         for (const flat of flats) {
-            await prisma.flat.upsert({
+            const flatRecord = await prisma.flat.upsert({
                 where: {
                     societyId_unitNumber: {
                         societyId: society.id,
@@ -97,33 +97,25 @@ async function main() {
                     phone: flat.phone,
                 },
             });
+
+            await prisma.resident.upsert({
+                where: { flatId: flatRecord.id },
+                update: {
+                    name: flat.residentName,
+                    phone: flat.phone,
+                    pinHash: crypto.createHash("sha256").update("1234").digest("hex"),
+                },
+                create: {
+                    flatId: flatRecord.id,
+                    name: flat.residentName,
+                    phone: flat.phone,
+                    pinHash: crypto.createHash("sha256").update("1234").digest("hex"),
+                },
+            });
         }
 
-        const flatRecord = await prisma.flat.findUniqueOrThrow({
-            where: {
-                societyId_unitNumber: {
-                    societyId: society.id,
-                    unitNumber: flat.unitNumber,
-                },
-            },
-        });
-
-        await prisma.resident.upsert({
-            where: { flatId: flatRecord.id },
-            update: {
-                name: flat.residentName,
-                phone: flat.phone,
-                pinHash: crypto.createHash("sha256").update("1234").digest("hex"),
-            },
-            create: {
-                flatId: flatRecord.id,
-                name: flat.residentName,
-                phone: flat.phone,
-                pinHash: crypto.createHash("sha256").update("1234").digest("hex"),
-            },
-        });
         console.log(`Created society: ${society.name}`);
-        console.log(`Created/updated ${flats.length} flats`);
+        console.log(`Created/updated ${flats.length} flats and residents`);
     }
 }
 
