@@ -6,15 +6,17 @@ let configured = false;
 
 function configure() {
     if (configured) return true;
-    if (!env.webPushVapidSubject || !env.webPushVapidPrivateKey) {
+    if (
+        !env.webPushVapidSubject ||
+        !env.webPushVapidPublicKey ||
+        !env.webPushVapidPrivateKey
+    ) {
         return false;
     }
 
     webpush.setVapidDetails(
         env.webPushVapidSubject,
-        // The public key is intentionally supplied by the web client.
-        // web-push only requires the VAPID private key and subject on the server.
-        "",
+        env.webPushVapidPublicKey,
         env.webPushVapidPrivateKey,
     );
     configured = true;
