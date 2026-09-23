@@ -6,21 +6,19 @@ let configured = false;
 
 function configure() {
     if (configured) return true;
-    if (!env.webPushVapidSubject || !env.webPushVapidPublicKey || !env.webPushVapidPrivateKey) {
+    if (!env.webPushVapidSubject || !env.webPushVapidPrivateKey) {
         return false;
     }
 
     webpush.setVapidDetails(
         env.webPushVapidSubject,
-        env.webPushVapidPublicKey,
+        // The public key is intentionally supplied by the web client.
+        // web-push only requires the VAPID private key and subject on the server.
+        "",
         env.webPushVapidPrivateKey,
     );
     configured = true;
     return true;
-}
-
-export function getWebPushPublicKey() {
-    return env.webPushVapidPublicKey;
 }
 
 export async function sendResidentPush(
