@@ -58,7 +58,18 @@ function Login({ onLogin }: { onLogin: (resident: Resident) => void }) {
                 </div>
                 <form onSubmit={submit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                     <label className="block text-sm font-medium text-slate-700">Phone number</label>
-                    <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+919920419564" className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-400" />
+                    <div className="mt-2 flex overflow-hidden rounded-xl border border-slate-200 focus-within:border-slate-400">
+                        <span className="flex items-center border-r border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-600">+91</span>
+                        <input
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                            inputMode="numeric"
+                            type="tel"
+                            maxLength={10}
+                            placeholder="9920419564"
+                            className="min-w-0 flex-1 px-4 py-3 outline-none"
+                        />
+                    </div>
                     <label className="mt-5 block text-sm font-medium text-slate-700">Resident PIN</label>
                     <input value={pin} onChange={(e) => setPin(e.target.value)} inputMode="numeric" type="password" maxLength={8} placeholder="1234" className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-slate-400" />
                     {error && <div className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-600">{error}</div>}
